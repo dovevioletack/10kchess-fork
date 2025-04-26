@@ -288,9 +288,9 @@ setInterval(() => {
             let piece = 1 + Math.floor(Math.random() * 4);
             if(Math.random() < 0.0045) piece = 5;
             setSquare(randomX, randomY, piece/*random number between 1 and 5*/, 0);
-            chatMessage = "[System] " + (i + 1) + " pieces have dropped from the sky"
+            chatMessage = "[System] " + (i + 1) + " pieces just dropped"
         }
-    } else if (Math.random() < 0.97) {
+    } else if (Math.random() < 0.98) {
         let pieces = [];
         for (let x = 0; x < boardW; x++) {
             for (let y = 0; y < boardH; y++) {
@@ -304,7 +304,7 @@ setInterval(() => {
             setSquare(piece[0], piece[1], 0, 0);
             chatMessage = "[System] Aliens have abducted " + (i + 1) + " pieces"
         }
-    } else {
+    } else if (Math.random() < 0.99) {
         let teamA = +Object.keys(clients)[Math.floor(Math.random() * Object.keys(clients).length)];
         let teamB = +Object.keys(clients)[Math.floor(Math.random() * Object.keys(clients).length)];
         console.log([teamA, teamB])
@@ -323,7 +323,33 @@ setInterval(() => {
             for (const piece of pieces) {
                 setSquare(piece[0], piece[1], board[piece[0]][piece[1]], teamB);
             }
-            chatMessage = `[System] Teams ${teamToName(teamA)} has swapped with ${teamToName(teamB)}`
+            chatMessage = `[System] ${teamToName(teamA)} has swapped pieces with ${teamToName(teamB)}`
+        }
+    } else {
+        let topPlayer = null;
+        let maxKills = -Infinity;
+
+        for (let teamId in leaderboard) {
+            if (leaderboard[teamId] > maxKills) {
+                maxKills = leaderboard[teamId];
+                topPlayer = +teamId;
+            }
+        }
+
+        if (topPlayer) {
+            let pieces = [];
+            for (let x = 0; x < boardW; x++) {
+                for (let y = 0; y < boardH; y++) {
+                    if(teams[x][y] === topPlayer && board[x][y] < 6) pieces.push([x, y]);
+                }
+            }
+            for (let i = 0; i < Math.floor(Math.random() * pieces.length / 3) + 5; i++) {
+                const piece = pieces[Math.floor(Math.random() * pieces.length)]
+                pieces.splice(piece, 1);
+                if (!piece) break;
+                setSquare(piece[0], piece[1], 0, 0);
+                chatMessage = "[System] The council has taxed " + (i + 1) + " pieces of " + teamToName(topPlayer);
+            }
         }
     }
 
