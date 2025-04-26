@@ -110,11 +110,11 @@ window.onmousedown = (e) => {
 
     const inBounds = squareX >= 0 && squareX < boardW && squareY >= 0 && squareY < boardH;
 
-    if(inBounds && board[squareX][squareY] !== 0 && teams[squareX][squareY] === selfId){
+    if(inBounds && board[squareX][squareY] !== 0 && (teams[squareX][squareY] === selfId)){
         selectedSquareX = squareX;
         selectedSquareY = squareY;
 
-        legalMoves = generateLegalMoves(selectedSquareX, selectedSquareY, board, teams);
+        legalMoves = generateLegalMoves(selectedSquareX, selectedSquareY, board, teams, allies);
 
         draggingSelected = true;
 
@@ -189,7 +189,8 @@ let camera = {x: -boardW * squareSize / 2, y: -boardH * squareSize / 2, scale: 1
 // 4 - rook
 // 5 - queen
 // 6 - king
-const srcs = ['wp','wn','wb','wr','wq','wk'];
+// 7 - amazon
+const srcs = ['wp','wn','wb','wr','wq','wk','wa'];
 
 const imgs = [undefined];
 let imgsToLoad = 0, imgsLoaded = false;
@@ -367,8 +368,8 @@ function render() {
                 if(teams[i][j] === 0){
                     ctx.drawImage(imgs[board[i][j]], i * squareSize, j * squareSize);
                 } else {
-                    if(teams[i][j] === selfId){
-                        ctx.fillStyle = '#00b400';
+                    if(teams[i][j] === selfId || allies.includes(teams[i][j])) {
+                        ctx.fillStyle = teams[i][j] === selfId ? '#00b400' : '#00b4b4';
                         ctx.globalAlpha = 0.6 + Math.sin(time / 320) * 0.2;
                         ctx.fillRect(i * squareSize, j * squareSize, squareSize, squareSize);
                         ctx.globalAlpha = 1;
