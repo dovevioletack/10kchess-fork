@@ -556,7 +556,7 @@ global.app = uWS.App().ws('/*', {
         // move piece - x,y to x,y
         else if(data.byteLength === 8){
             const now = Date.now();
-            if(now - ws.lastMovedTime < moveCooldown - 500){
+            if(now - ws.lastMovedTime < moveCooldown - 230){
                 return;
             }
 
