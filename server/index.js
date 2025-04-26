@@ -31,7 +31,7 @@ function serverIp(){
 
 const info = serverIp();
 
-const isProd = !(Array.isArray(info['Wi-Fi']) && info['Wi-Fi'][0] === 'your local developer ip address');
+const isProd = !(Array.isArray(info['Wi-Fi']) && info['Wi-Fi'][0] === '10.0.0.170');
 console.log({isProd});
 
 let leaderboard = {/*teamId: kills*/};
@@ -245,10 +245,7 @@ setInterval(() => {
     teamsToNeutralize.length = 0;
 }, 440)
 
-setInterval(() => {
-    const filledRatio = filledSquares / (boardW * boardH);
-    if(Math.random() * 0.34 < filledRatio) return;
-
+const randomEmptySquare = () => {
     // spawn a random piece
     let randomX, randomY, succeeded = false;
     for(let tries = 0; tries < 10; tries++){
@@ -262,6 +259,10 @@ setInterval(() => {
         break;
     }
 
+    return {randomX, randomY, succeeded};
+}
+setInterval(() => {
+    const {randomX, randomY, succeeded} = randomEmptySquare();
     if(succeeded === true){
         // spawn piece
         let piece = 1 + Math.floor(Math.random() * 4);
@@ -269,6 +270,53 @@ setInterval(() => {
         setSquare(randomX, randomY, piece/*random number between 1 and 5*/, 0);
     }
 }, 300)
+
+setInterval(() => {
+    let chatMessage = "[System] Nothing happened?";
+    if (Math.random() < 0.1) {
+        const {randomX, randomY, succeeded} = randomEmptySquare();
+
+        if(succeeded === true){
+            // spawn piece
+            setSquare(randomX, randomY, 7, 0);
+            chatMessage = "[System] An amazon has spawned"
+        }
+    } else if (Math.random() < 0.7) {
+        for (let i = 0; i < Math.floor(Math.random() * 100) + 10; i++) {
+            const {randomX, randomY, succeeded} = randomEmptySquare();
+            // spawn piece
+            let piece = 1 + Math.floor(Math.random() * 4);
+            if(Math.random() < 0.0045) piece = 5;
+            setSquare(randomX, randomY, piece/*random number between 1 and 5*/, 0);
+            chatMessage = "[System] " + (i + 1) + " pieces have dropped from the sky"
+        }
+    } else {
+        let pieces = [];
+        for (let x = 0; x < boardW; x++) {
+            for (let y = 0; y < boardH; y++) {
+                if(teams[x][y] !== 0 && board[x][y] < 6) pieces.push([x, y]);
+            }
+        }
+        for (let i = 0; i < Math.floor(Math.random() * pieces.length / 10) + 5; i++) {
+            const piece = pieces[Math.floor(Math.random() * pieces.length)]
+            pieces.splice(piece, 1);
+            if (!piece) break;
+            setSquare(piece[0], piece[1], 0, 0);
+            chatMessage = "[System] Aliens have abducted " + (i + 1) + " pieces"
+        }
+    }
+
+    if(chatMessage.length % 2 === 1){
+        chatMessage += ' ';
+    }
+    const buf = new Uint8Array(chatMessage.length + 4);
+    const u16 = new Uint16Array(buf.buffer);
+    buf[0] = 247;
+    buf[1] = 183;
+    u16[1] = 65534;
+    encodeAtPosition(chatMessage, buf, 4);
+    broadcast(buf);
+}, 600000)
 
 let teamsToNeutralize = [];
 
@@ -301,6 +349,9 @@ global.app = uWS.App().ws('/*', {
 
         ws.chatMsgsLast5s = 0;
         ws.lastChat5sTime = 0;
+
+        ws.outgoingAllyRequests = [];
+        ws.allies = [ws.id];
 
         // ws.name = teamToName(ws.id);
 
@@ -477,7 +528,7 @@ global.app = uWS.App().ws('/*', {
             }
 
             // check if it's legal
-            const legalMoves = generateLegalMoves(startX, startY, board, teams);
+            const legalMoves = generateLegalMoves(startX, startY, board, teams, ws.allies);
 
             let includes = false;
             for(let i = 0; i < legalMoves.length; i++){
@@ -493,6 +544,35 @@ global.app = uWS.App().ws('/*', {
             ws.lastMovedTime = now;
 
             return;
+        }
+
+        else if(data.byteLength === 4){
+            if (decoded[0] === 65533) {
+                if (!clients[decoded[1]]) return;
+                if (ws.allies.includes(decoded[1])) {
+                    clients[decoded[1]].allies.splice(clients[decoded[1]].allies.indexOf(ws.id), 1);
+                    ws.allies.splice(clients[decoded[1]].allies.indexOf(ws.id), 1);
+                    clients[decoded[1]].send(new Uint16Array([65534, ws.id]), true, false);
+                    ws.send(new Uint16Array([65534, decoded[1]]), true, false);
+                    console.log("unally");
+                    return;
+                }
+                if (!ws.outgoingAllyRequests.includes(decoded[1])) {
+                    ws.outgoingAllyRequests.push(decoded[1]);
+                } else {
+                    ws.outgoingAllyRequests.splice(ws.outgoingAllyRequests.indexOf(decoded[1]), 1);
+                }
+                clients[decoded[1]].send(new Uint16Array([65533, ws.id]), true, false);
+                if (clients[decoded[1]].outgoingAllyRequests.includes(ws.id)) {
+                    console.log(ws.id + " allied with " + decoded[1])
+                    clients[decoded[1]].send(new Uint16Array([65534, ws.id]), true, false);
+                    ws.send(new Uint16Array([65534, decoded[1]]), true, false);
+                    clients[decoded[1]].allies.push(ws.id);
+                    ws.allies.push(decoded[1]);
+                    clients[decoded[1]].outgoingAllyRequests.splice(clients[decoded[1]].outgoingAllyRequests.indexOf(ws.id), 1);
+                    ws.outgoingAllyRequests.splice(clients[decoded[1]].outgoingAllyRequests.indexOf(ws.id), 1);
+                }
+            }
         }
     },
     close: (ws) => {
