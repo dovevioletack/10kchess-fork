@@ -9,10 +9,10 @@ Array.prototype.random = function() {
     return this[Math.floor(Math.random() * this.length)];
 }
 
-globalThis.generateLegalMoves = (x, y, board, teams) => {
+globalThis.generateLegalMoves = (x, y, board, teams, allies) => {
     const type = board[x][y];
     const selfId = teams[x][y];
-    return moveMap[type](x, y, board, teams, selfId);
+    return moveMap[type](x, y, board, teams, selfId).filter(m => !allies.includes(teams[m[0]][m[1]]));
 }
 
 const moveMap = [
@@ -98,6 +98,10 @@ const moveMap = [
             [x-1,y+1],
             [x-1,y-1]
         ].filter(m => m[0] >= 0 && m[1] >= 0 && m[0] < boardW && m[1] < boardH && teams[m[0]][m[1]] !== selfId);
+    },
+    // amazon
+    (x, y, board, teams, selfId) => {
+        return [...moveMap[2](x, y, board, teams, selfId), ...moveMap[5](x, y, board, teams, selfId)];
     },
 ]
 
