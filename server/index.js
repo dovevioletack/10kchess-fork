@@ -31,7 +31,7 @@ function serverIp(){
 
 const info = serverIp();
 
-const isProd = !(Array.isArray(info['Wi-Fi']) && info['Wi-Fi'][0] === '10.0.0.170');
+const isProd = !(Array.isArray(info['Wi-Fi']) && info['Wi-Fi'][0] === 'your local developer ip address');
 console.log({isProd});
 
 let leaderboard = {/*teamId: kills*/};
