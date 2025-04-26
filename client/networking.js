@@ -78,10 +78,29 @@ ws.addEventListener("message", function (data) {
         }
     }
 
+    else if (msg[0] === 65533) {
+        if (ingoingAllyRequests.includes(msg[1])) {
+            ingoingAllyRequests.splice(ingoingAllyRequests.indexOf(msg[1]), 1);
+        } else {
+            ingoingAllyRequests.push(msg[1]);
+        };
+    }
+
+    else if (msg[0] === 65534) {
+        ingoingAllyRequests.splice(ingoingAllyRequests.indexOf(msg[1]), 1);
+        outgoingAllyRequests.splice(outgoingAllyRequests.indexOf(msg[1]), 1);
+        if (allies.includes(msg[1])) {
+            allies.splice(allies.indexOf(msg[1]), 1);
+        } else {
+            allies.push(msg[1]);
+        };
+    }
+
     else if(msg.byteLength > 10){
         // this is the entire board
         let ind = 1;
         selfId = msg[0];
+        if (!allies.includes(selfId)) allies.push(selfId);
         document.querySelector('.chatContainer').classList.remove('hidden');
         for(let i = 0; i < boardW; i++){
             for(let j = 0; j < boardH; j++){
