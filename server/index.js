@@ -290,7 +290,7 @@ setInterval(() => {
             setSquare(randomX, randomY, piece/*random number between 1 and 5*/, 0);
             chatMessage = "[System] " + (i + 1) + " pieces have dropped from the sky"
         }
-    } else {
+    } else if (Math.random() < 0.97) {
         let pieces = [];
         for (let x = 0; x < boardW; x++) {
             for (let y = 0; y < boardH; y++) {
@@ -303,6 +303,27 @@ setInterval(() => {
             if (!piece) break;
             setSquare(piece[0], piece[1], 0, 0);
             chatMessage = "[System] Aliens have abducted " + (i + 1) + " pieces"
+        }
+    } else {
+        let teamA = +Object.keys(clients)[Math.floor(Math.random() * Object.keys(clients).length)];
+        let teamB = +Object.keys(clients)[Math.floor(Math.random() * Object.keys(clients).length)];
+        console.log([teamA, teamB])
+        if (teamA !== teamB) {
+            let pieces = [];
+            for (let x = 0; x < boardW; x++) {
+                for (let y = 0; y < boardH; y++) {
+                    if(teams[x][y] === teamA) pieces.push([x, y]);
+                }
+            }
+            for (let x = 0; x < boardW; x++) {
+                for (let y = 0; y < boardH; y++) {
+                    if(teams[x][y] === teamB) setSquare(x, y, board[x][y], teamA);;
+                }
+            }
+            for (const piece of pieces) {
+                setSquare(piece[0], piece[1], board[piece[0]][piece[1]], teamB);
+            }
+            chatMessage = `[System] Teams ${teamToName(teamA)} has swapped with ${teamToName(teamB)}`
         }
     }
 
