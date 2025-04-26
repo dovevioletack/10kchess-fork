@@ -289,3 +289,38 @@ body {
     left: -175px !important;
     opacity: 0; 
 }
+
+.context-menu {
+    display: flex;
+    flex-direction: column;
+    font-family: 'Ubuntu', sans-serif;
+    font-size: 12px;
+    position: absolute;
+    text-align: center;
+    background: white;
+    border: 1px solid gray;
+    border-radius: 4px;
+    padding: .3rem;
+    box-shadow: 0 0 2px 2px rgba(0,0,0,.2);
+}
+
+
+.context-menu [role=button] {
+    border-radius: 4px;
+    padding: .5rem;
+}
+
+.context-menu .sep {
+    display: inline-block;
+    width: 80%;
+    border-bottom: 1px solid gray;
+    margin: .3rem;
+}
+
+.context-menu [role=button]:not([aria-disabled]):hover {
+    background: darkgray;
+}
+
+.context-menu [aria-disabled] {
+    opacity: 0.4;
+}
