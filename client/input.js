@@ -190,6 +190,7 @@ function addToLeaderboard(playerName, playerId, mapName, bracketValue=0, lbColor
     playerNameDiv.classList.add('player-name');
     playerNameDiv.innerText = playerName + ` [${bracketValue}]`;
     playerNameDiv.style.color = lbColor;
+    playerNameDiv.dataset.id = playerId;
     playerDiv.appendChild(playerNameDiv);
 }
 
@@ -227,3 +228,62 @@ function sendChatMsg(txt){
     encodeAtPosition(txt, buf, 2);
     send(buf);
 }
+
+function getKingLocation(id) {
+    for (let x = 0; x < teams.length; x++) {
+        for (let y = 0; y < teams[0].length; y++) {
+            if (teams[x][y] !== id || board[x][y] !== 6) continue;
+            return {x, y, found: true};
+        }
+    }
+    return {found: false}
+}
+
+let playerContextId = 0;
+const ingoingAllyRequests = [];
+const outgoingAllyRequests = [];
+const allies = [];
+
+addEventListener("resize", e => {
+    document.getElementById("playerContextMenu").style.display = 'none';
+})
+
+
+document.body.addEventListener("pointerdown", e => {
+    if (e.target.id === "playerContextMenu" || e.target.parentElement.id === "playerContextMenu") return;
+    document.getElementById("playerContextMenu").style.display = 'none';
+})
+
+
+document.body.addEventListener("pointerup", e => {
+    if (e.target.classList.contains("player-name")) {
+        e.preventDefault();
+        const menu = document.getElementById("playerContextMenu")
+        menu.style.display = 'block';
+        menu.style.left = e.pageX + "px";
+        menu.style.top = e.pageY + "px";
+        playerContextId = +e.target.dataset.id;
+        document.getElementById("allyRequestButton").ariaDisabled = selfId === playerContextId ? true : null;
+        document.getElementById("allyRequestButton").textContent = allies.includes(playerContextId) ? "Unally" : (ingoingAllyRequests.includes(playerContextId) ? "Add ally" : (outgoingAllyRequests.includes(playerContextId) ? "Withdraw ally request" : "Ally request"))
+    }
+    if (e.target.id === "cameraContextButton") {
+        const location = getKingLocation(playerContextId);
+        console.log(location)
+        if (!location.found) return;
+        interpSquare = [location.x, location.y];
+        setTimeout(() => {
+            if (interpSquare[0] === location.x && interpSquare[1] === location.y) interpSquare = undefined;
+        }, 1200)
+        document.getElementById("playerContextMenu").style.display = 'none';
+    }
+    if (e.target.id === "allyRequestButton") {
+        send(new Uint16Array([65533, playerContextId]));
+        if (allies.includes(playerContextId)) {
+        } else if (outgoingAllyRequests.includes(playerContextId)) {
+            outgoingAllyRequests.splice(outgoingAllyRequests.indexOf(playerContextId), 1);
+        } else {
+            outgoingAllyRequests.push(playerContextId);
+        };
+        document.getElementById("playerContextMenu").style.display = 'none';
+    }
+})
