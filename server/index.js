@@ -271,87 +271,127 @@ setInterval(() => {
     }
 }, 300)
 
-setInterval(() => {
-    let chatMessage = "[System] Nothing happened?";
-    if (Math.random() < 0.1) {
-        const {randomX, randomY, succeeded} = randomEmptySquare();
-
-        if(succeeded === true){
-            // spawn piece
-            setSquare(randomX, randomY, 7, 0);
-            chatMessage = "[System] An amazon has spawned"
-        }
-    } else if (Math.random() < 0.7) {
-        for (let i = 0; i < Math.floor(Math.random() * 100) + 10; i++) {
+const events = [
+    {
+        weight: 10,
+        run: () => {
             const {randomX, randomY, succeeded} = randomEmptySquare();
-            // spawn piece
-            let piece = 1 + Math.floor(Math.random() * 4);
-            if(Math.random() < 0.0045) piece = 5;
-            setSquare(randomX, randomY, piece/*random number between 1 and 5*/, 0);
-            chatMessage = "[System] " + (i + 1) + " pieces just dropped"
-        }
-    } else if (Math.random() < 0.98) {
-        let pieces = [];
-        for (let x = 0; x < boardW; x++) {
-            for (let y = 0; y < boardH; y++) {
-                if(teams[x][y] !== 0 && board[x][y] < 6) pieces.push([x, y]);
+
+            if(succeeded === true){
+                // spawn piece
+                setSquare(randomX, randomY, 7, 0);
+                return "[System] An amazon has spawned";
             }
         }
-        for (let i = 0; i < Math.floor(Math.random() * pieces.length / 10) + 5; i++) {
-            const piece = pieces[Math.floor(Math.random() * pieces.length)]
-            pieces.splice(piece, 1);
-            if (!piece) break;
-            setSquare(piece[0], piece[1], 0, 0);
-            chatMessage = "[System] Aliens have abducted " + (i + 1) + " pieces"
+    },
+    {
+        weight: 60,
+        run: () => {
+            let chatMessage = "[System] Something came but nothing dropped?";
+            for (let i = 0; i < Math.floor(Math.random() * 100) + 10; i++) {
+                const {randomX, randomY, succeeded} = randomEmptySquare();
+                // spawn piece
+                let piece = 1 + Math.floor(Math.random() * 4);
+                if(Math.random() < 0.0045) piece = 5;
+                setSquare(randomX, randomY, piece/*random number between 1 and 5*/, 0);
+                chatMessage = "[System] " + (i + 1) + " pieces just dropped"
+            }
+            return chatMessage;
         }
-    } else if (Math.random() < 0.99) {
-        let teamA = +Object.keys(clients)[Math.floor(Math.random() * Object.keys(clients).length)];
-        let teamB = +Object.keys(clients)[Math.floor(Math.random() * Object.keys(clients).length)];
-        console.log([teamA, teamB])
-        if (teamA !== teamB) {
+    },
+    {
+        weight: 28,
+        run: () => {
+            let chatMessage = `[System] You all are too poor`
             let pieces = [];
             for (let x = 0; x < boardW; x++) {
                 for (let y = 0; y < boardH; y++) {
-                    if(teams[x][y] === teamA) pieces.push([x, y]);
+                    if(teams[x][y] !== 0 && board[x][y] < 6) pieces.push([x, y]);
                 }
             }
-            for (let x = 0; x < boardW; x++) {
-                for (let y = 0; y < boardH; y++) {
-                    if(teams[x][y] === teamB) setSquare(x, y, board[x][y], teamA);;
-                }
-            }
-            for (const piece of pieces) {
-                setSquare(piece[0], piece[1], board[piece[0]][piece[1]], teamB);
-            }
-            chatMessage = `[System] ${teamToName(teamA)} has swapped pieces with ${teamToName(teamB)}`
-        }
-    } else {
-        let topPlayer = null;
-        let maxKills = -Infinity;
-
-        for (let teamId in leaderboard) {
-            if (leaderboard[teamId] > maxKills) {
-                maxKills = leaderboard[teamId];
-                topPlayer = +teamId;
-            }
-        }
-
-        if (topPlayer) {
-            let pieces = [];
-            for (let x = 0; x < boardW; x++) {
-                for (let y = 0; y < boardH; y++) {
-                    if(teams[x][y] === topPlayer && board[x][y] < 6) pieces.push([x, y]);
-                }
-            }
-            for (let i = 0; i < Math.floor(Math.random() * pieces.length / 3) + 5; i++) {
+            for (let i = 0; i < Math.floor(Math.random() * pieces.length / 10) + 5; i++) {
                 const piece = pieces[Math.floor(Math.random() * pieces.length)]
                 pieces.splice(piece, 1);
                 if (!piece) break;
                 setSquare(piece[0], piece[1], 0, 0);
-                chatMessage = "[System] The council has taxed " + (i + 1) + " pieces of " + teamToName(topPlayer);
+                chatMessage = "[System] Aliens have abducted " + (i + 1) + " pieces"
+            }
+            return chatMessage;
+        }
+    },
+    {
+        weight: 1,
+        run: () => {
+            let teamA = +Object.keys(clients)[Math.floor(Math.random() * Object.keys(clients).length)];
+            let teamB = +Object.keys(clients)[Math.floor(Math.random() * Object.keys(clients).length)];
+            console.log([teamA, teamB])
+            if (teamA !== teamB) {
+                let pieces = [];
+                for (let x = 0; x < boardW; x++) {
+                    for (let y = 0; y < boardH; y++) {
+                        if(teams[x][y] === teamA) pieces.push([x, y]);
+                    }
+                }
+                for (let x = 0; x < boardW; x++) {
+                    for (let y = 0; y < boardH; y++) {
+                        if(teams[x][y] === teamB) setSquare(x, y, board[x][y], teamA);;
+                    }
+                }
+                for (const piece of pieces) {
+                    setSquare(piece[0], piece[1], board[piece[0]][piece[1]], teamB);
+                }
+                return `[System] ${teamToName(teamA)} has swapped pieces with ${teamToName(teamB)}`
             }
         }
+    },
+    {
+        weight: 1,
+        run: () => {
+            let chatMessage = "[System] You all are too poor to get taxed.";
+            let topPlayer = null;
+            let maxKills = -Infinity;
+    
+            for (let teamId in leaderboard) {
+                if (leaderboard[teamId] > maxKills) {
+                    maxKills = leaderboard[teamId];
+                    topPlayer = +teamId;
+                }
+            }
+    
+            if (topPlayer) {
+                let pieces = [];
+                for (let x = 0; x < boardW; x++) {
+                    for (let y = 0; y < boardH; y++) {
+                        if(teams[x][y] === topPlayer && board[x][y] < 6) pieces.push([x, y]);
+                    }
+                }
+                for (let i = 0; i < Math.floor(Math.random() * pieces.length / 3) + 5; i++) {
+                    const piece = pieces[Math.floor(Math.random() * pieces.length)]
+                    pieces.splice(piece, 1);
+                    if (!piece) break;
+                    setSquare(piece[0], piece[1], 0, 0);
+                    chatMessage = "[System] The council has taxed " + (i + 1) + " pieces of " + teamToName(topPlayer);
+                }
+            }
+
+            return chatMessage;
+        }
     }
+];
+
+function runRandomEvent() {
+    const totalWeight = events.reduce((sum, event) => sum + event.weight, 0);
+    let random = Math.random() * totalWeight;
+    for (const event of events) {
+        if (random < event.weight) {
+            return event.run();
+        }
+        random -= event.weight;
+    }
+}
+  
+setInterval(() => {
+    let chatMessage = runRandomEvent();
 
     if(chatMessage.length % 2 === 1){
         chatMessage += ' ';
@@ -363,7 +403,7 @@ setInterval(() => {
     u16[1] = 65534;
     encodeAtPosition(chatMessage, buf, 4);
     broadcast(buf);
-}, 600000)
+}, 10 * 60 * 1000)
 
 let teamsToNeutralize = [];
 
