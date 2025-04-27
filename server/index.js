@@ -282,6 +282,7 @@ const events = [
                 setSquare(randomX, randomY, 7, 0);
                 return "[System] An amazon has spawned";
             }
+            return `[System] The board is so crowded`
         }
     },
     {
@@ -342,6 +343,7 @@ const events = [
                 }
                 return `[System] ${teamToName(teamA)} has swapped pieces with ${teamToName(teamB)}`
             }
+            return `[System] Can't find teams to swap, we'll get 'em next time.`;
         }
     },
     {
